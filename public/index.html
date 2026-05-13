@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>부당특약 심사 도구 | 공정거래위원회 예규 제485호</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Noto+Serif+KR:wght@300;400;600;700&family=Noto+Sans+KR:wght@300;400;500;700&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #f5f3ee;
+    --bg2: #ede9e0;
+    --surface: #ffffff;
+    --surface2: #faf9f6;
+    --border: #d6cfc0;
+    --border2: #c4bba8;
+    --ink: #1a1814;
+    --ink2: #4a4540;
+    --ink3: #8a8078;
+    --accent: #7a1f00;
+    --accent2: #c44a1a;
+    --risk-critical: #8b0000;
+    --risk-high: #c44a1a;
+    --risk-medium: #b8780c;
+    --risk-low: #4a7c59;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--ink); font-family: 'Noto Sans KR', sans-serif; min-height: 100vh; }
+
+  .container { max-width: 960px; margin: 0 auto; padding: 48px 28px 80px; }
+
+  header { text-align: center; margin-bottom: 40px; padding-bottom: 28px; border-bottom: 1.5px solid var(--ink); }
+  .gov-tag { font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 4px; color: var(--ink3); text-transform: uppercase; margin-bottom: 14px; }
+  header h1 { font-family: 'Noto Serif KR', serif; font-size: 26px; font-weight: 700; color: var(--ink); margin-bottom: 6px; }
+  header p { font-size: 12px; color: var(--ink3); letter-spacing: 0.5px; }
+  .decree-badge { display: inline-block; margin-top: 12px; background: var(--accent); color: #fff; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 2px; padding: 4px 12px; border-radius: 2px; }
+
+  .panel { background: var(--surface); border: 1px solid var(--border); border-radius: 2px; padding: 28px 32px; margin-bottom: 18px; box-shadow: 1px 2px 8px rgba(0,0,0,0.05); }
+  .panel-title { font-family: 'Noto Serif KR', serif; font-size: 12px; font-weight: 700; letter-spacing: 2.5px; color: var(--accent); text-transform: uppercase; margin-bottom: 18px; padding-bottom: 10px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 8px; }
+  .panel-title::before { content: ''; display: inline-block; width: 3px; height: 13px; background: var(--accent); border-radius: 1px; flex-shrink: 0; }
+
+  .tabs { display: flex; border-bottom: 1px solid var(--border); margin-bottom: 18px; }
+  .tab { font-size: 13px; font-weight: 500; padding: 9px 22px; border: none; background: transparent; color: var(--ink3); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: all 0.2s; font-family: 'Noto Sans KR', sans-serif; }
+  .tab.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: 700; }
+
+  textarea { width: 100%; min-height: 200px; background: var(--surface2); border: 1px solid var(--border); border-radius: 2px; padding: 14px 16px; color: var(--ink); font-family: 'Noto Sans KR', sans-serif; font-size: 13px; line-height: 1.9; outline: none; resize: vertical; transition: border-color 0.2s; }
+  textarea:focus { border-color: var(--accent2); }
+  textarea::placeholder { color: var(--ink3); }
+
+  .drop-zone { border: 2px dashed var(--border2); border-radius: 2px; padding: 36px; text-align: center; cursor: pointer; background: var(--surface2); transition: all 0.2s; }
+  .drop-zone:hover, .drop-zone.drag-over { border-color: var(--accent2); background: rgba(122,31,0,0.03); }
+  .drop-icon { font-size: 30px; margin-bottom: 10px; display: block; }
+  .drop-zone p { font-size: 13px; color: var(--ink3); margin-bottom: 5px; }
+  .drop-types { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--ink3); letter-spacing: 2px; }
+  #fileInput { display: none; }
+
+  .file-selected { display: flex; align-items: center; gap: 10px; margin-top: 12px; padding: 10px 16px; background: rgba(74,124,89,0.08); border: 1px solid rgba(74,124,89,0.3); border-radius: 2px; font-size: 13px; color: var(--risk-low); }
+  .file-clear { margin-left: auto; background: none; border: none; cursor: pointer; font-size: 16px; color: var(--ink3); }
+
+  .analyze-row { display: flex; justify-content: center; margin-top: 20px; }
+  .btn-analyze { font-family: 'Noto Serif KR', serif; font-size: 15px; font-weight: 700; background: var(--accent); color: #fff; border: none; border-radius: 2px; padding: 15px 60px; cursor: pointer; letter-spacing: 3px; transition: all 0.2s; box-shadow: 0 2px 8px rgba(122,31,0,0.2); }
+  .btn-analyze:hover { background: #5e1800; box-shadow: 0 4px 16px rgba(122,31,0,0.3); }
+
+  .loading-panel { display: none; text-align: center; padding: 56px; background: var(--surface); border: 1px solid var(--border); box-shadow: 1px 2px 8px rgba(0,0,0,0.05); }
+  .loading-panel.active { display: block; }
+  .spinner { width: 34px; height: 34px; border: 2px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin 0.9s linear infinite; margin: 0 auto 14px; }
+  @keyframes spin { to { transform: rotate(360deg); } }
+  .loading-panel p { color: var(--ink3); font-size: 13px; letter-spacing: 1px; }
+
+  .results-panel { display: none; }
+  .results-panel.active { display: block; }
+
+  .meter-row { display: flex; align-items: center; gap: 16px; background: var(--surface); border: 1px solid var(--border); padding: 16px 24px; margin-bottom: 14px; box-shadow: 1px 2px 8px rgba(0,0,0,0.05); }
+  .meter-lbl { font-family: 'Noto Serif KR', serif; font-size: 12px; font-weight: 700; white-space: nowrap; }
+  .meter { flex: 1; height: 6px; background: var(--bg2); border-radius: 3px; overflow: hidden; }
+  .meter-fill { height: 100%; border-radius: 3px; width: 0; transition: width 1.2s cubic-bezier(0.4,0,0.2,1); }
+  .meter-score { font-family: 'Noto Serif KR', serif; font-size: 16px; font-weight: 700; white-space: nowrap; }
+
+  .sum-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; margin-bottom: 14px; }
+  .sum-card { background: var(--surface); border: 1px solid var(--border); padding: 14px; text-align: center; box-shadow: 1px 2px 8px rgba(0,0,0,0.04); }
+  .sum-n { font-family: 'DM Mono', monospace; font-size: 24px; display: block; line-height: 1; margin-bottom: 4px; }
+  .sum-l { font-size: 10px; letter-spacing: 1.5px; color: var(--ink3); text-transform: uppercase; }
+  .s-critical .sum-n { color: var(--risk-critical); }
+  .s-high .sum-n { color: var(--risk-high); }
+  .s-medium .sum-n { color: var(--risk-medium); }
+  .s-low .sum-n { color: var(--risk-low); }
+
+  .result-box { background: var(--surface); border: 1px solid var(--border); box-shadow: 1px 2px 8px rgba(0,0,0,0.05); overflow: hidden; margin-bottom: 14px; }
+  .result-box-header { background: var(--ink); color: #fff; padding: 12px 24px; font-family: 'DM Mono', monospace; font-size: 10px; letter-spacing: 3px; text-transform: uppercase; }
+
+  .issue-card { border-bottom: 1px solid var(--bg2); padding: 20px 24px; animation: rowIn 0.35s ease both; }
+  @keyframes rowIn { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+  .issue-card:last-child { border-bottom: none; }
+  .issue-card:hover { background: var(--surface2); }
+
+  .issue-top { display: flex; align-items: flex-start; gap: 12px; margin-bottom: 12px; flex-wrap: wrap; }
+  .issue-badge-wrap { display: flex; align-items: center; gap: 8px; flex-shrink: 0; }
+  .risk-icon { font-size: 18px; line-height: 1; }
+
+  .badge { display: inline-flex; align-items: center; gap: 4px; font-family: 'DM Mono', monospace; font-size: 9.5px; letter-spacing: 1.5px; text-transform: uppercase; padding: 3px 9px; border-radius: 2px; font-weight: 500; white-space: nowrap; }
+  .b-critical { background: rgba(139,0,0,0.1); color: var(--risk-critical); border: 1px solid rgba(139,0,0,0.25); }
+  .b-high { background: rgba(196,74,26,0.1); color: var(--risk-high); border: 1px solid rgba(196,74,26,0.25); }
+  .b-medium { background: rgba(184,120,12,0.1); color: var(--risk-medium); border: 1px solid rgba(184,120,12,0.25); }
+  .b-low { background: rgba(74,124,89,0.1); color: var(--risk-low); border: 1px solid rgba(74,124,89,0.25); }
+
+  .law-ref { font-family: 'DM Mono', monospace; font-size: 10px; color: var(--ink3); letter-spacing: 1px; margin-left: auto; white-space: nowrap; }
+
+  .issue-excerpt { font-size: 12.5px; background: rgba(122,31,0,0.07); border-left: 3px solid var(--accent2); padding: 8px 12px; color: var(--accent); border-radius: 0 2px 2px 0; margin-bottom: 10px; line-height: 1.7; word-break: keep-all; }
+
+  .issue-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .issue-field { background: var(--surface2); border: 1px solid var(--border); border-radius: 2px; padding: 10px 14px; }
+  .field-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--ink3); margin-bottom: 5px; display: block; }
+  .field-value { font-size: 12.5px; color: var(--ink2); line-height: 1.7; word-break: keep-all; }
+
+  .recommendation-box { background: rgba(74,124,89,0.06); border: 1px solid rgba(74,124,89,0.25); border-radius: 2px; padding: 10px 14px; margin-top: 10px; }
+  .rec-label { font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px; text-transform: uppercase; color: var(--risk-low); margin-bottom: 5px; display: block; }
+  .rec-value { font-size: 12.5px; color: var(--ink2); line-height: 1.7; word-break: keep-all; }
+
+  .no-issues { text-align: center; padding: 48px; }
+  .no-issues p { font-family: 'Noto Serif KR', serif; font-size: 15px; color: var(--risk-low); margin-top: 10px; }
+  .no-issues small { display: block; font-size: 11px; color: var(--ink3); margin-top: 6px; }
+
+  .legal-note { background: var(--bg2); border: 1px solid var(--border); padding: 13px 20px; font-size: 11px; color: var(--ink3); line-height: 1.8; margin-bottom: 16px; }
+  .legal-note strong { color: var(--ink2); }
+
+  .reset-row { text-align: center; }
+  .btn-reset { font-family: 'Noto Sans KR', sans-serif; font-size: 12px; background: transparent; border: 1px solid var(--border2); border-radius: 2px; padding: 9px 28px; cursor: pointer; color: var(--ink3); letter-spacing: 1px; transition: all 0.2s; }
+  .btn-reset:hover { border-color: var(--accent); color: var(--accent); }
+
+  @media (max-width: 600px) {
+    .container { padding: 28px 16px 60px; }
+    .panel { padding: 20px 16px; }
+    .sum-grid { grid-template-columns: repeat(2, 1fr); }
+    .issue-grid { grid-template-columns: 1fr; }
+    .law-ref { display: none; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div class="gov-tag">공정거래위원회 예규 제485호</div>
+    <h1>부당특약 심사 도구</h1>
+    <p>하도급거래 공정화에 관한 법률 제3조의4 기반 자동 검토 시스템</p>
+    <span class="decree-badge">시행 2025. 5. 1.</span>
+  </header>
+
+  <div class="panel" id="inputPanel">
+    <div class="panel-title">계약서 / 약정 내용 입력</div>
+    <div class="tabs">
+      <button class="tab active" id="tabText" onclick="switchTab('text')">텍스트 붙여넣기</button>
+      <button class="tab" id="tabFile" onclick="switchTab('file')">파일 업로드</button>
+    </div>
+
+    <div id="textWrap">
+      <textarea id="textInput" placeholder="심사할 계약서, 약정서, 특약조건, 발주서 등의 내용을 붙여넣기 하세요.&#10;예) 수급사업자는 공사 중 발생하는 모든 민원을 수급사업자의 비용으로 처리하여야 한다..."></textarea>
+    </div>
+
+    <div id="fileWrap" style="display:none">
+      <div class="drop-zone" id="dropZone" onclick="document.getElementById('fileInput').click()">
+        <span class="drop-icon">📋</span>
+        <p>계약서 파일을 드래그하거나 클릭하여 업로드</p>
+        <p class="drop-types">TXT · MD</p>
+      </div>
+      <input type="file" id="fileInput" accept=".txt,.md" onchange="handleFile(event)">
+      <div class="file-selected" id="fileSelected" style="display:none">
+        <span>📄</span>
+        <span id="fileName"></span>
+        <button class="file-clear" onclick="clearFile()">✕</button>
+      </div>
+    </div>
+
+    <div class="analyze-row">
+      <button class="btn-analyze" onclick="analyze()">심 사 시 작</button>
+    </div>
+  </div>
+
+  <div class="loading-panel" id="loadingPanel">
+    <div class="spinner"></div>
+    <p>부당특약 심사지침과 대조하여 분석 중입니다...</p>
+  </div>
+
+  <div class="results-panel" id="resultsPanel">
+    <div class="meter-row">
+      <span class="meter-lbl">종합 위험도</span>
+      <div class="meter"><div class="meter-fill" id="mFill"></div></div>
+      <span class="meter-score" id="mScore"></span>
+    </div>
+
+    <div class="sum-grid">
+      <div class="sum-card s-critical"><span class="sum-n" id="sCritical">0</span><span class="sum-l">즉각위험</span></div>
+      <div class="sum-card s-high"><span class="sum-n" id="sHigh">0</span><span class="sum-l">위반</span></div>
+      <div class="sum-card s-medium"><span class="sum-n" id="sMedium">0</span><span class="sum-l">주의</span></div>
+      <div class="sum-card s-low"><span class="sum-n" id="sLow">0</span><span class="sum-l">경미</span></div>
+    </div>
+
+    <div class="result-box">
+      <div class="result-box-header">심사 결과 — 위반 항목 상세</div>
+      <div id="issueList"></div>
+    </div>
+
+    <div class="legal-note">
+      <strong>※ 참고사항</strong> 이 심사 결과는 공정거래위원회 예규 제485호(부당특약 심사지침, 2025.5.1. 시행)를 기준으로 AI가 자동 분석한 것입니다.
+      법적 판단은 구체적인 거래 맥락, 관계 법령 해석 등 종합적 검토가 필요하므로 반드시 법률 전문가의 자문을 받으시기 바랍니다.
+    </div>
+
+    <div class="reset-row">
+      <button class="btn-reset" onclick="reset()">↩ 새 계약서 심사하기</button>
+    </div>
+  </div>
+
+</div>
+<script>
+let currentTab = 'text';
+let fileContent = '';
+
+function switchTab(t) {
+  currentTab = t;
+  document.getElementById('tabText').classList.toggle('active', t === 'text');
+  document.getElementById('tabFile').classList.toggle('active', t === 'file');
+  document.getElementById('textWrap').style.display = t === 'text' ? '' : 'none';
+  document.getElementById('fileWrap').style.display = t === 'file' ? '' : 'none';
+}
+
+const dz = document.getElementById('dropZone');
+dz.addEventListener('dragover', e => { e.preventDefault(); dz.classList.add('drag-over'); });
+dz.addEventListener('dragleave', () => dz.classList.remove('drag-over'));
+dz.addEventListener('drop', e => { e.preventDefault(); dz.classList.remove('drag-over'); if (e.dataTransfer.files[0]) processFile(e.dataTransfer.files[0]); });
+
+function handleFile(e) { if (e.target.files[0]) processFile(e.target.files[0]); }
+function processFile(f) {
+  document.getElementById('fileName').textContent = f.name;
+  document.getElementById('fileSelected').style.display = 'flex';
+  const r = new FileReader(); r.onload = ev => { fileContent = ev.target.result; }; r.readAsText(f);
+}
+function clearFile() {
+  fileContent = '';
+  document.getElementById('fileSelected').style.display = 'none';
+  document.getElementById('fileInput').value = '';
+}
+
+async function analyze() {
+  const content = currentTab === 'text'
+    ? document.getElementById('textInput').value.trim()
+    : fileContent;
+  if (!content) { alert('심사할 내용을 입력해 주세요.'); return; }
+
+  document.getElementById('inputPanel').style.display = 'none';
+  document.getElementById('loadingPanel').classList.add('active');
+
+  try {
+    const res = await fetch('/api/analyze', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ content })
+    });
+
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || '오류가 발생했습니다.');
+
+    document.getElementById('loadingPanel').classList.remove('active');
+    showResults(data.results || []);
+  } catch (err) {
+    document.getElementById('loadingPanel').classList.remove('active');
+    document.getElementById('inputPanel').style.display = '';
+    alert('오류: ' + err.message);
+  }
+}
+
+function showResults(issues) {
+  const c = { critical: 0, high: 0, medium: 0, low: 0 };
+  issues.forEach(i => { if (c[i.risk] !== undefined) c[i.risk]++; });
+
+  document.getElementById('sCritical').textContent = c.critical;
+  document.getElementById('sHigh').textContent = c.high;
+  document.getElementById('sMedium').textContent = c.medium;
+  document.getElementById('sLow').textContent = c.low;
+
+  const score = Math.min(100, c.critical * 40 + c.high * 20 + c.medium * 8 + c.low * 2);
+  let color, label;
+  if (score >= 60)      { color = '#8b0000'; label = '즉각 조치 필요'; }
+  else if (score >= 35) { color = '#c44a1a'; label = '위반 가능성 높음'; }
+  else if (score >= 10) { color = '#b8780c'; label = '주의 필요'; }
+  else if (score > 0)   { color = '#4a7c59'; label = '경미한 수준'; }
+  else                  { color = '#4a7c59'; label = '이상 없음'; }
+
+  const fill = document.getElementById('mFill');
+  fill.style.background = color;
+  document.getElementById('mScore').style.color = color;
+  document.getElementById('mScore').textContent = label;
+  setTimeout(() => { fill.style.width = score + '%'; }, 80);
+
+  const list = document.getElementById('issueList');
+  if (!issues.length) {
+    list.innerHTML = `<div class="no-issues"><div style="font-size:36px">✅</div><p>부당특약에 해당하는 내용이 발견되지 않았습니다.</p><small>※ 이 지침에 열거되지 않은 사항도 법 위반이 될 수 있으므로 전문가 검토를 권장합니다.</small></div>`;
+  } else {
+    list.innerHTML = issues.map((issue, i) => {
+      const riskIcon = (issue.risk === 'critical' || issue.risk === 'high') ? '🔴' : '🟡';
+      const badgeText = { critical: '즉각위험', high: '위반', medium: '주의', low: '경미' }[issue.risk] || issue.risk;
+      return `
+        <div class="issue-card" style="animation-delay:${i * 0.07}s">
+          <div class="issue-top">
+            <div class="issue-badge-wrap">
+              <span class="risk-icon">${riskIcon}</span>
+              <span class="badge b-${issue.risk}">${badgeText}</span>
+            </div>
+            <span style="font-size:12px;font-weight:600;color:var(--ink);flex:1">${esc(issue.violation_type || '')}</span>
+            <span class="law-ref">${esc(issue.law_ref || '')}</span>
+          </div>
+          ${issue.original_text ? `<div class="issue-excerpt">"${esc(issue.original_text)}"</div>` : ''}
+          <div class="issue-grid">
+            <div class="issue-field">
+              <span class="field-label">위반 사유 및 근거</span>
+              <div class="field-value">${esc(issue.reason || '-')}</div>
+            </div>
+            <div class="issue-field">
+              <span class="field-label">위반 유형</span>
+              <div class="field-value">${esc(issue.violation_type || '-')}</div>
+            </div>
+          </div>
+          ${issue.recommendation ? `
+          <div class="recommendation-box">
+            <span class="rec-label">✏ 수정 / 삭제 권고</span>
+            <div class="rec-value">${esc(issue.recommendation)}</div>
+          </div>` : ''}
+        </div>`;
+    }).join('');
+  }
+  document.getElementById('resultsPanel').classList.add('active');
+}
+
+function esc(s) { return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+
+function reset() {
+  document.getElementById('resultsPanel').classList.remove('active');
+  document.getElementById('inputPanel').style.display = '';
+  document.getElementById('textInput').value = '';
+  document.getElementById('mFill').style.width = '0';
+  clearFile();
+}
+</script>
+</body>
+</html>
